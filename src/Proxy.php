@@ -43,16 +43,9 @@ class Proxy {
   }
 
   /**
-   * Connect to the API.
-   *
-   * @return string
-   *   The access token.
+   * Generate access token.
    */
-  public function connect() {
-    $existing_token = $this->cache->get('adobe_campaign_token');
-    if ($existing_token && (int) $existing_token->expire > time()) {
-      return base64_decode($existing_token->data);
-    }
+  private function generateToken() {
     $time = time();
     $token_request = $this->client->request(
       'POST',
@@ -73,8 +66,34 @@ class Proxy {
         $token = $token_json->access_token;
         $token_expire = $time + $token_json->expires_in;
         $this->cache->set('adobe_campaign_token', base64_encode($token), $token_expire);
-        return $token;
       }
+    }
+  }
+
+  /**
+   * Generic API request.
+   */
+  public function request() {
+    $existing_token = $this->cache->get('adobe_campaign_token');
+    if (!$existing_token || (int) $existing_token->expire > time()) {
+      $this->generateToken();
+      $existing_token = $this->cache->get('adobe_campaign_token');
+    }
+    if ($existing_token) {
+      $access_token = base64_decode($existing_token->data);
+      $request = $this->client->request(
+        'GET',
+        'https://mc.adobe.io/ninds-mkt-stage1/campaign/profileAndServices/profile',
+        [
+          'headers' => [
+            'Authorization' => "Bearer {$access_token}",
+            'Cache-Control' => 'no-cache',
+            'Content-Type' => 'application/json',
+            'X-Api-Key' => $_SERVER['ADOBE_API_KEY'],
+          ],
+        ]
+      );
+      return $request->getBody();
     }
   }
 
