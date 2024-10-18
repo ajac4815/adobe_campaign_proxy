@@ -1,0 +1,4 @@
+services:
+  adobe_campaign_proxy.proxy:
+    class: Drupal\adobe_campaign_proxy\Proxy
+    arguments: [ '@cache.default', '@http_client' ]
