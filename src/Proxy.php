@@ -50,8 +50,8 @@ class Proxy {
    */
   public function connect() {
     $existing_token = $this->cache->get('adobe_campaign_token');
-    if ($existing_token && (int) $existing_token->expire < time()) {
-      return $existing_token->data;
+    if ($existing_token && (int) $existing_token->expire > time()) {
+      return base64_decode($existing_token->data);
     }
     $time = time();
     $token_request = $this->client->request(
@@ -72,7 +72,7 @@ class Proxy {
       if ($token_json) {
         $token = $token_json->access_token;
         $token_expire = $time + $token_json->expires_in;
-        $this->cache->set('adobe_campaign_token', $token, $token_expire);
+        $this->cache->set('adobe_campaign_token', base64_encode($token), $token_expire);
         return $token;
       }
     }
