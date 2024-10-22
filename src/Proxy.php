@@ -135,7 +135,7 @@ class Proxy {
           $body = $request->getBody();
           if ($body) {
             $json = json_decode($body);
-            if ($json) {
+            if ($json && $json->content) {
               return $json;
             }
           }
@@ -150,16 +150,23 @@ class Proxy {
 
   /**
    * Send API post request.
+   *
+   * @param string $endpoint
+   *   The API endpoint.
+   * @param array $data
+   *   The data to send in the POST request.
    */
-  public function post() {
+  public function post(string $endpoint, array $data) {
     $token = $this->generateToken();
     if ($token) {
       $org = $_SERVER['ADOBE_ORG'];
       if ($org) {
         try {
+          $base_url = "https://mc.adobe.io/{$org}/campaign/";
+          $full_url = $base_url . $endpoint;
           $request = $this->client->request(
           'POST',
-          'https://mc.adobe.io/ninds-mkt-stage1/campaign/profileAndServices/profile',
+          $full_url,
           [
             'headers' => [
               'Authorization' => "Bearer {$token}",
@@ -167,11 +174,14 @@ class Proxy {
               'Content-Type' => 'application/json',
               'X-Api-Key' => $_SERVER['ADOBE_API_KEY'],
             ],
-            'json' => [
-              "email" => "adam.jacobs@nih.gov",
-            ],
+            'json' => $data,
           ]
           );
+          $code = $request->getStatusCode();
+          if ($code === 201) {
+            return TRUE;
+          }
+          return FALSE;
         }
         catch (GuzzleException $e) {
           return FALSE;

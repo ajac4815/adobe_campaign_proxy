@@ -25,11 +25,52 @@ class Subscription {
   }
 
   /**
-   * Get a profile.
+   * Create new profile.
+   *
+   * @param string $email
+   *   The profile email.
+   *
+   * @return bool
+   *   The result.
    */
-  public function getProfile() {
-    $response = $this->proxy->get('profileAndServices/profile');
-    return $response;
+  public function createProfile(string $email) {
+    $endpoint = "profileAndServices/profile";
+    $data = ['email' => $email];
+    return $this->proxy->post($endpoint, $data);
+  }
+
+  /**
+   * Get a profile.
+   *
+   * @param string $email
+   *   The email identifier.
+   *
+   * @return bool
+   *   Bool for if profile was found.
+   */
+  public function getProfile(string $email) {
+    $endpoint = "profileAndServices/profile/byText?text={$email}&filterType=email";
+    $response = $this->proxy->get($endpoint);
+    if ($response) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Subscribe a profile to a service.
+   *
+   * @param string $service
+   *   The service ID to subscribe to.
+   * @param string $email
+   *   The profile email to subscribe.
+   */
+  public function subscribe(string $service, string $email) {
+    // Create profile if one does not already exist.
+    $hasProfile = $this->getProfile($email);
+    if (!$hasProfile) {
+      $success = $this->createProfile($email);
+    }
   }
 
 }
