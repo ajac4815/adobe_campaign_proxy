@@ -54,7 +54,7 @@ class Proxy {
     // Check for existing auth token and return if not expired.
     // Otherwise, generate and cache a new one.
     $existing_token = $this->cache->get('adobe_campaign_token');
-    if (!$existing_token || (int) $existing_token->expire > time()) {
+    if (!$existing_token || (int) $existing_token->expire <= time()) {
       if (!$_SERVER['ADOBE_API_KEY'] || !$_SERVER['ADOBE_CLIENT_SECRET']) {
         return FALSE;
       }
