@@ -106,18 +106,23 @@ class Proxy {
   /**
    * Send API get request.
    *
+   * @param string $endpoint
+   *   The API endpoint.
+   *
    * @return array|false
    *   Array of json response data or false.
    */
-  public function get() {
+  public function get(string $endpoint) {
     $token = $this->generateToken();
     if ($token) {
       $org = $_SERVER['ADOBE_ORG'];
       if ($org) {
         try {
+          $base_url = "https://mc.adobe.io/{$org}/campaign/";
+          $full_url = $base_url . $endpoint;
           $request = $this->client->request(
           'GET',
-          "https://mc.adobe.io/{$org}/campaign/profileAndServices/profile",
+          $full_url,
           [
             'headers' => [
               'Authorization' => "Bearer {$token}",
