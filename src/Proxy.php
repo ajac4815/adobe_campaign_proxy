@@ -5,6 +5,7 @@ namespace Drupal\adobe_campaign_proxy;
 use Drupal\Core\Cache\CacheBackendInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Proxy class to connect to Adobe Campaign API.
@@ -31,16 +32,26 @@ class Proxy {
   protected $client;
 
   /**
+   * The proxy logger channel.
+   *
+   * @var \Psr\Log\LoggerInterface
+   */
+  protected $logger;
+
+  /**
    * Constructs proxy.
    *
    * @param \Drupal\Core\Cache\CacheBackendInterface $cache
    *   The cache backend service.
    * @param \GuzzleHttp\ClientInterface $client
    *   The http client.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   The proxy logger channel.
    */
-  public function __construct(CacheBackendInterface $cache, ClientInterface $client) {
+  public function __construct(CacheBackendInterface $cache, ClientInterface $client, LoggerInterface $logger) {
     $this->cache = $cache;
     $this->client = $client;
+    $this->logger = $logger;
   }
 
   /**
@@ -55,7 +66,9 @@ class Proxy {
     // Otherwise, generate and cache a new one.
     $existing_token = $this->cache->get('adobe_campaign_token');
     if (!$existing_token || (int) $existing_token->expire <= time()) {
-      if (!$_SERVER['ADOBE_API_KEY'] || !$_SERVER['ADOBE_CLIENT_SECRET']) {
+      if (!$_SERVER['ADOBE_API_KEY'] || !$_SERVER['ADOBE_CLIENT_SECRET'] || !$_SERVER['ADOBE_ORG']) {
+        $message = 'A required env variable for the adobe campaign proxy is missing. Please review README.md.';
+        $this->logger->error($message);
         return FALSE;
       }
       try {
