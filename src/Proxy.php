@@ -87,7 +87,7 @@ class Proxy {
   /**
    * Send API get request.
    */
-  public function request() {
+  public function get() {
     $token = $this->generateToken();
     if ($token) {
       $org = $_SERVER['ADOBE_ORG'];
@@ -112,20 +112,17 @@ class Proxy {
   /**
    * Send API post request.
    */
-  public function postRequest() {
-    $existing_token = $this->cache->get('adobe_campaign_token');
-    if (!$existing_token || (int) $existing_token->expire > time()) {
-      $this->generateToken();
-      $existing_token = $this->cache->get('adobe_campaign_token');
-    }
-    if ($existing_token) {
-      $access_token = base64_decode($existing_token->data);
-      $request = $this->client->request(
+  public function post() {
+    $token = $this->generateToken();
+    if ($token) {
+      $org = $_SERVER['ADOBE_ORG'];
+      if ($org) {
+        $request = $this->client->request(
         'POST',
         'https://mc.adobe.io/ninds-mkt-stage1/campaign/profileAndServices/profile',
         [
           'headers' => [
-            'Authorization' => "Bearer {$access_token}",
+            'Authorization' => "Bearer {$token}",
             'Cache-Control' => 'no-cache',
             'Content-Type' => 'application/json',
             'X-Api-Key' => $_SERVER['ADOBE_API_KEY'],
@@ -134,7 +131,8 @@ class Proxy {
             "email" => "adam.jacobs@nih.gov",
           ],
         ]
-      );
+        );
+      }
     }
   }
 
