@@ -44,10 +44,20 @@ class Proxy {
 
   /**
    * Generate access token.
+   *
+   * @return string|false
+   *   Returns token or false value.
    */
   private function generateToken() {
     $time = time();
-    $token_request = $this->client->request(
+    // Check for existing auth token and return if not expired.
+    // Otherwise, generate and cache a new one.
+    $existing_token = $this->cache->get('adobe_campaign_token');
+    if (!$existing_token || (int) $existing_token->expire > time()) {
+      if (!$_SERVER['ADOBE_API_KEY'] || !$_SERVER['ADOBE_CLIENT_SECRET']) {
+        return FALSE;
+      }
+      $token_request = $this->client->request(
       'POST',
       $this::GENERATE_TOKEN_URL,
       [
@@ -58,22 +68,51 @@ class Proxy {
           'scope' => 'openid,AdobeID,campaign_sdk,additional_info.projectedProductContext,campaign_config_server_general,deliverability_service_general',
         ],
       ]
-    );
-    $token_body = $token_request->getBody();
-    if ($token_body) {
-      $token_json = json_decode($token_body);
-      if ($token_json) {
-        $token = $token_json->access_token;
-        $token_expire = $time + $token_json->expires_in;
-        $this->cache->set('adobe_campaign_token', base64_encode($token), $token_expire);
+      );
+      $token_body = $token_request->getBody();
+      if ($token_body) {
+        $token_json = json_decode($token_body);
+        if ($token_json) {
+          $token = $token_json->access_token;
+          $token_expire = $time + $token_json->expires_in;
+          $this->cache->set('adobe_campaign_token', base64_encode($token), $token_expire);
+          return $token;
+        }
+      }
+      return FALSE;
+    }
+    return base64_decode($existing_token->data);
+  }
+
+  /**
+   * Send API get request.
+   */
+  public function request() {
+    $token = $this->generateToken();
+    if ($token) {
+      $org = $_SERVER['ADOBE_ORG'];
+      if ($org) {
+        $request = $this->client->request(
+        'GET',
+        "https://mc.adobe.io/{$org}/campaign/profileAndServices/profile",
+        [
+          'headers' => [
+            'Authorization' => "Bearer {$token}",
+            'Cache-Control' => 'no-cache',
+            'Content-Type' => 'application/json',
+            'X-Api-Key' => $_SERVER['ADOBE_API_KEY'],
+          ],
+        ]
+        );
+        return $request->getBody();
       }
     }
   }
 
   /**
-   * Generic API request.
+   * Send API post request.
    */
-  public function request() {
+  public function postRequest() {
     $existing_token = $this->cache->get('adobe_campaign_token');
     if (!$existing_token || (int) $existing_token->expire > time()) {
       $this->generateToken();
@@ -82,7 +121,7 @@ class Proxy {
     if ($existing_token) {
       $access_token = base64_decode($existing_token->data);
       $request = $this->client->request(
-        'GET',
+        'POST',
         'https://mc.adobe.io/ninds-mkt-stage1/campaign/profileAndServices/profile',
         [
           'headers' => [
@@ -91,9 +130,11 @@ class Proxy {
             'Content-Type' => 'application/json',
             'X-Api-Key' => $_SERVER['ADOBE_API_KEY'],
           ],
+          'json' => [
+            "email" => "adam.jacobs@nih.gov",
+          ],
         ]
       );
-      return $request->getBody();
     }
   }
 
