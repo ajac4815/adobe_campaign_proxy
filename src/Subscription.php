@@ -37,8 +37,7 @@ class Subscription {
     $endpoint = "profileAndServices/profile";
     $data = ['email' => $email];
     $response = $this->proxy->post($endpoint, $data);
-    if ($response && $response->content) {
-      $response = reset($response->content);
+    if ($response) {
       return $response->PKey;
     }
     return FALSE;
