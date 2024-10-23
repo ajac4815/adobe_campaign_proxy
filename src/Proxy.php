@@ -96,6 +96,7 @@ class Proxy {
         }
       }
       catch (GuzzleException $e) {
+        $this->logger->error($e->getMessage());
         return FALSE;
       }
       return FALSE;
@@ -142,6 +143,7 @@ class Proxy {
           return FALSE;
         }
         catch (GuzzleException $e) {
+          $this->logger->error($e->getMessage());
           return FALSE;
         }
       }
@@ -193,6 +195,7 @@ class Proxy {
           return FALSE;
         }
         catch (GuzzleException $e) {
+          $this->logger->error($e->getMessage());
           return FALSE;
         }
       }
