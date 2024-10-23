@@ -36,7 +36,12 @@ class Subscription {
   public function createProfile(string $email) {
     $endpoint = "profileAndServices/profile";
     $data = ['email' => $email];
-    return $this->proxy->post($endpoint, $data);
+    $response = $this->proxy->post($endpoint, $data);
+    if ($response) {
+      $response = reset($response);
+      return $response->PKey;
+    }
+    return FALSE;
   }
 
   /**
@@ -45,14 +50,24 @@ class Subscription {
    * @param string $email
    *   The email identifier.
    *
-   * @return bool
-   *   Bool for if profile was found.
+   * @return string|bool
+   *   Profile ID or false.
    */
   public function getProfile(string $email) {
     $endpoint = "profileAndServices/profile/byText?text={$email}&filterType=email";
-    $response = $this->proxy->get($endpoint);
-    if ($response) {
-      return TRUE;
+    $data = $this->proxy->get($endpoint);
+    if ($data && $data->content) {
+      $data = reset($data->content);
+      return $data->PKey;
+    }
+    return FALSE;
+  }
+
+  public function getService(string $service) {
+    $endpoint = "profileAndServices/service/{$service}";
+    $data = $this->proxy->get($endpoint);
+    if ($data) {
+      return $data->PKey;
     }
     return FALSE;
   }
@@ -67,9 +82,16 @@ class Subscription {
    */
   public function subscribe(string $service, string $email) {
     // Create profile if one does not already exist.
-    $hasProfile = $this->getProfile($email);
-    if (!$hasProfile) {
-      $success = $this->createProfile($email);
+    $profile_key = $this->getProfile($email);
+    if (!$profile_key) {
+      $profile_key = $this->createProfile($email);
+    }
+    // @todo get service pkey and subscriber pkey.
+    $service_key = $this->getService($service);
+    if ($service_key) {
+      $endpoint = "profileAndServices/service/{$service_key}/subscriptions/";
+      $data = ['subscriber' => ['PKey' => $profile_key]];
+      $this->proxy->post($endpoint, $data);
     }
   }
 

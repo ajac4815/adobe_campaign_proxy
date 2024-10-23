@@ -109,7 +109,7 @@ class Proxy {
    * @param string $endpoint
    *   The API endpoint.
    *
-   * @return array|false
+   * @return object|false
    *   Array of json response data or false.
    */
   public function get(string $endpoint) {
@@ -135,7 +135,7 @@ class Proxy {
           $body = $request->getBody();
           if ($body) {
             $json = json_decode($body);
-            if ($json && $json->content) {
+            if ($json) {
               return $json;
             }
           }
@@ -155,6 +155,9 @@ class Proxy {
    *   The API endpoint.
    * @param array $data
    *   The data to send in the POST request.
+   *
+   * @return array|bool
+   *   Created data or false.
    */
   public function post(string $endpoint, array $data) {
     $token = $this->generateToken();
@@ -179,7 +182,13 @@ class Proxy {
           );
           $code = $request->getStatusCode();
           if ($code === 201) {
-            return TRUE;
+            $body = $request->getBody();
+            if ($body) {
+              $json = json_decode($body);
+              if ($json && $json->content) {
+                return $json->content;
+              }
+            }
           }
           return FALSE;
         }
