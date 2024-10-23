@@ -158,7 +158,7 @@ class Proxy {
    * @param array $data
    *   The data to send in the POST request.
    *
-   * @return array|bool
+   * @return object|false
    *   Created data or false.
    */
   public function post(string $endpoint, array $data) {
@@ -187,8 +187,8 @@ class Proxy {
             $body = $request->getBody();
             if ($body) {
               $json = json_decode($body);
-              if ($json && $json->content) {
-                return $json->content;
+              if ($json) {
+                return $json;
               }
             }
           }

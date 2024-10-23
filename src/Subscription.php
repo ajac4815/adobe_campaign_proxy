@@ -37,8 +37,8 @@ class Subscription {
     $endpoint = "profileAndServices/profile";
     $data = ['email' => $email];
     $response = $this->proxy->post($endpoint, $data);
-    if ($response) {
-      $response = reset($response);
+    if ($response && $response->content) {
+      $response = reset($response->content);
       return $response->PKey;
     }
     return FALSE;
@@ -63,6 +63,15 @@ class Subscription {
     return FALSE;
   }
 
+  /**
+   * Get a subscription service.
+   *
+   * @param string $service
+   *   The service ID.
+   *
+   * @return string|false
+   *   The service key or false.
+   */
   public function getService(string $service) {
     $endpoint = "profileAndServices/service/{$service}";
     $data = $this->proxy->get($endpoint);
