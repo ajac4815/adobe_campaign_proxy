@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * Hooks to support campaign proxy.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function adobe_campaign_proxy_theme() {
+  // Required for webform handlers.
+  return [
+    'webform_handler_adobe_campaign_subscribe_summary' => [
+      'variables' => ['settings' => NULL, 'handler' => []],
+    ],
+  ];
+}
