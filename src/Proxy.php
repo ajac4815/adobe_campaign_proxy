@@ -55,6 +55,16 @@ class Proxy {
   }
 
   /**
+   * Get API base URL.
+   *
+   * @return string|false
+   *   Base URL or false.
+   */
+  public static function urlBase() {
+    return $_SERVER['ADOBE_ORG'] ? "https://mc.adobe.io/{$_SERVER['ADOBE_ORG']}/campaign/" : FALSE;
+  }
+
+  /**
    * Generate access token.
    *
    * @return string|false
@@ -116,10 +126,8 @@ class Proxy {
   public function get(string $endpoint) {
     $token = $this->generateToken();
     if ($token) {
-      $org = $_SERVER['ADOBE_ORG'];
-      if ($org) {
+      if ($base_url = $this::urlBase()) {
         try {
-          $base_url = "https://mc.adobe.io/{$org}/campaign/";
           $full_url = $base_url . $endpoint;
           $request = $this->client->request(
           'GET',
@@ -164,10 +172,8 @@ class Proxy {
   public function post(string $endpoint, array $data) {
     $token = $this->generateToken();
     if ($token) {
-      $org = $_SERVER['ADOBE_ORG'];
-      if ($org) {
+      if ($base_url = $this::urlBase()) {
         try {
-          $base_url = "https://mc.adobe.io/{$org}/campaign/";
           $full_url = $base_url . $endpoint;
           $request = $this->client->request(
           'POST',
