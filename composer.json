@@ -1,0 +1,13 @@
+{
+  "name": "drupal/adobe_campaign_proxy",
+  "description": "The purpose of this module is to provide integration points with the API for an Adobe Campaign instance to perform common operations (creating/getting profiles, creating subscriptions, sending messages, etc.).",
+  "type": "drupal-module",
+  "license": "GPL-2.0-or-later",
+  "minimum-stability": "dev",
+  "authors": [
+    {
+      "name": "Adam Jacobs (jacobsaw)",
+      "role": "Maintainer"
+    }
+  ]
+}
