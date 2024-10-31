@@ -35,6 +35,8 @@ class Subscription {
    */
   public function createProfile(string $email) {
     $endpoint = "profileAndServices/profile";
+    // Standardize email case.
+    $email = strtolower($email);
     $data = ['email' => $email];
     $response = $this->proxy->post($endpoint, $data);
     if ($response) {
