@@ -30,7 +30,7 @@ class Delivery {
    * @param string $workflow_id
    *   The ID of the workflow to start.
    */
-  public function startWorkflow(string $workflow_id) {
+  private function startWorkflow(string $workflow_id) {
     $endpoint = "workflow/execution/{$workflow_id}/commands";
     $data = ['method' => 'start'];
     $this->proxy->post($endpoint, $data);
@@ -41,15 +41,24 @@ class Delivery {
    *
    * @param string $workflow_id
    *   The ID of the workflow.
+   * @param string $signal_id
+   *   The ID of the signal activity within the workflow.
    * @param array $parameters
    *   The data to pass to the workflow.
    */
-  public function sendWorkflowSignal(string $workflow_id, array $parameters) {
+  private function sendWorkflowSignal(string $workflow_id, string $signal_id, array $parameters) {
     // Required for external signal activity.
     $data['source'] = 'API';
     $data['parameters'] = $parameters;
     // @todo Get endpoint here.
-    $endpoint = '';
+    $response = $this->proxy->get("workflow/execution/{$workflow_id}");
+    // @todo Add conditionals!
+    $trigger_url = $response->activities->activity->$signal_id->trigger->href;
+    $endpoint = str_replace(
+      $this->proxy::urlBase(),
+      '',
+      $trigger_url
+    );
     $this->proxy->post($endpoint, $data);
   }
 
@@ -63,10 +72,12 @@ class Delivery {
    */
   public function send(string $workflow_id, array $parameters) {
     // @todo make both methods private.
+    // @todo Handle bad response throughout.
     $this->startWorkflow($workflow_id);
     // @todo Replace with real sleep.
-    sleep(5);
-    $this->sendWorkflowSignal($workflow_id, $parameters);
+    sleep(10);
+    // @todo Pass this signal ID via some sort of configuration...
+    $this->sendWorkflowSignal($workflow_id, 'signal1', $parameters);
   }
 
 }
