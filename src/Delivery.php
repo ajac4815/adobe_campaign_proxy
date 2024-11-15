@@ -47,19 +47,20 @@ class Delivery {
    *   The data to pass to the workflow.
    */
   private function sendWorkflowSignal(string $workflow_id, string $signal_id, array $parameters) {
-    // Required for external signal activity.
+    // Prepare data for signal.
     $data['source'] = 'API';
     $data['parameters'] = $parameters;
-    // @todo Get endpoint here.
+    // Get signal trigger URL and confirm it is present in response.
     $response = $this->proxy->get("workflow/execution/{$workflow_id}");
-    // @todo Add conditionals!
-    $trigger_url = $response->activities->activity->$signal_id->trigger->href;
-    $endpoint = str_replace(
-      $this->proxy::urlBase(),
-      '',
-      $trigger_url
-    );
-    $this->proxy->post($endpoint, $data);
+    if ($response && isset($response->activities->activity->$signal_id->trigger->href)) {
+      $trigger_url = $response->activities->activity->$signal_id->trigger->href;
+      $endpoint = str_replace(
+        $this->proxy::urlBase(),
+        '',
+        $trigger_url
+      );
+      $this->proxy->post($endpoint, $data);
+    }
   }
 
   /**
