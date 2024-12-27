@@ -2,6 +2,7 @@
 
 namespace Drupal\adobe_campaign_proxy;
 
+use Drupal\Core\State\StateInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -24,16 +25,26 @@ class Delivery {
   protected $proxy;
 
   /**
+   * The state service.
+   *
+   * @var Drupal\Core\State\StateInterface
+   */
+  protected $state;
+
+  /**
    * Constructs the delivery service.
    *
    * @param Proxy $proxy
    *   The proxy API service.
    * @param \Psr\Log\LoggerInterface $logger
    *   The proxy logger channel.
+   * @param Drupal\Core\State\StateInterface $state
+   *   The state service.
    */
-  public function __construct(Proxy $proxy, LoggerInterface $logger) {
+  public function __construct(Proxy $proxy, LoggerInterface $logger, StateInterface $state) {
     $this->logger = $logger;
     $this->proxy = $proxy;
+    $this->state = $state;
   }
 
   /**
@@ -120,10 +131,20 @@ class Delivery {
    *
    * @param string $workflow_id
    *   The ID of the workflow that will be used.
+   * @param string $signal_id
+   *   The ID of the API signal activity.
    * @param array $parameters
    *   Data to pass to the workflow.
    */
-  public function send(string $workflow_id, array $parameters) {
+  public function send(string $workflow_id, string $signal_id, array $parameters) {
+    // Adobe has a default limit of 10 min. for workflow triggers.
+    // Ensure 10 min. have passed since the last runtime.
+    $state_name = "adobe_campaign_proxy.{$workflow_id}_last_runtime";
+    $last_runtime = $this->state->get($state_name);
+    if ($last_runtime && $last_runtime > (time() - 600)) {
+      $this->logger->warning("Workflow {$workflow_id} ran less than 10 minutes ago.");
+      return FALSE;
+    }
     // Confirm workflow is in expected state (stopped).
     $initialState = $this->getWorkflow($workflow_id);
     if (!$initialState) {
@@ -137,9 +158,9 @@ class Delivery {
     // Must be in "started" state prior to triggering external signal.
     $success = $this->startWorkflow($workflow_id);
     if ($success) {
-      // @todo Pass this signal ID via some sort of configuration...
-      // @todo Check for confirmation, at least from send.
-      return $this->sendWorkflowSignal($workflow_id, 'signal1', $parameters);
+      // Set last runtime.
+      $this->state->set($state_name, time());
+      return $this->sendWorkflowSignal($workflow_id, $signal_id, $parameters);
     }
     return FALSE;
   }

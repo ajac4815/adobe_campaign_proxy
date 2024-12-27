@@ -4,7 +4,7 @@ services:
     arguments: ["@cache.default", "@http_client", "@logger.channel.adobe_campaign_proxy"]
   adobe_campaign_proxy.delivery:
     class: Drupal\adobe_campaign_proxy\Delivery
-    arguments: ["@adobe_campaign_proxy.proxy", "@logger.channel.adobe_campaign_proxy"]
+    arguments: ["@adobe_campaign_proxy.proxy", "@logger.channel.adobe_campaign_proxy", "@state"]
   logger.channel.adobe_campaign_proxy:
     parent: logger.channel_base
     arguments: ["adobe_campaign_proxy"]
