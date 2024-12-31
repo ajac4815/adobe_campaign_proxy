@@ -80,7 +80,7 @@ class SendQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginI
     $result = $this->delivery->send('adam_workflow', 'signal1', $parameters);
     // Leave item in queue to process again later.
     if (!$result) {
-      throw new \Exception();
+      throw new \Exception("Error during Adobe delivery for node {$node->id()}. Check logs for more information.");
     }
   }
 
