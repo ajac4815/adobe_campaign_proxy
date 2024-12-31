@@ -1,0 +1,7 @@
+adobe_campaign_proxy.settings:
+  path: '/admin/config/adobe-campaign-proxy/settings'
+  defaults:
+    _form: '\Drupal\adobe_campaign_proxy\Form\DeliveryConfigForm'
+    _title: 'Adobe Campaign Proxy'
+  requirements:
+    _permission: 'administer site configuration'

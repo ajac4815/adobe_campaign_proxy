@@ -70,6 +70,7 @@ class SendQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginI
    * {@inheritDoc}
    */
   public function processItem($data) {
+    // Pull data from node to pass to send.
     $node = $this->entityTypeManager->getStorage('node')->load($data);
     $parameters = [
       'title' => $node->label(),
