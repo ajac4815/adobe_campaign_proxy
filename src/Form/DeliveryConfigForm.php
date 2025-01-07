@@ -2,8 +2,13 @@
 
 namespace Drupal\adobe_campaign_proxy\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The delivery configuration form.
@@ -16,6 +21,32 @@ class DeliveryConfigForm extends ConfigFormBase {
    * @var string
    */
   const SETTINGS = 'adobe_campaign_proxy.settings';
+
+  /**
+   * Entity bundle info service.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   */
+  protected $bundleInfo;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, TypedConfigManagerInterface $typedConfigManager, EntityTypeBundleInfoInterface $bundleInfo) {
+    parent::__construct($config_factory, $typedConfigManager);
+    $this->bundleInfo = $bundleInfo;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('config.typed'),
+      $container->get('entity_type.bundle.info')
+    );
+  }
 
   /**
    * {@inheritDoc}
@@ -39,11 +70,13 @@ class DeliveryConfigForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config(static::SETTINGS);
 
-    $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('node');
+    $content_types = $config->get('content_types');
+    $bundles = $this->bundleInfo->getBundleInfo('node');
     $options = [];
     foreach ($bundles as $key => $value) {
       $options[$key] = $value["label"];
       $form[$key] = [
+        '#default_value' => in_array($key, $content_types) ? 1 : 0,
         '#type' => 'checkbox',
         '#title' => $value["label"],
       ];
@@ -70,6 +103,14 @@ class DeliveryConfigForm extends ConfigFormBase {
     }
 
     return parent::buildForm($form, $form_state);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $bundles = $this->bundleInfo->getBundleInfo('node');
+    $values = $form_state->getValues();
   }
 
 }
