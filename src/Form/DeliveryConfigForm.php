@@ -69,15 +69,16 @@ class DeliveryConfigForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config(static::SETTINGS);
 
+    // Get current content types set and existing bundles.
     $content_types = $config->get('content_types');
     $bundles = $this->bundleInfo->getBundleInfo('node');
     $options = [];
     foreach ($bundles as $key => $value) {
       $options[$key] = $value["label"];
+      // Set default values.
       $enabled = FALSE;
       $workflow_id = FALSE;
       $signal_id = FALSE;
-      // @todo Get default values.
       if (in_array($key, array_keys($content_types))) {
         $enabled = TRUE;
         $workflow_id = $content_types[$key]['workflow_id'] ?: FALSE;
@@ -88,6 +89,7 @@ class DeliveryConfigForm extends ConfigFormBase {
         '#type' => 'checkbox',
         '#title' => $value["label"],
       ];
+      // Only show workflow and signal field if content type is checked.
       $form["{$key}_workflow_id"] = [
         '#default_value' => $workflow_id,
         '#type' => 'textfield',
@@ -123,7 +125,7 @@ class DeliveryConfigForm extends ConfigFormBase {
     $values = $form_state->getValues();
     $config = $this->config(static::SETTINGS);
     $content_types = $config->get('content_types');
-    // @todo Add updating existing bundle with new workflow values.
+    $changed = FALSE;
     foreach ($bundles as $bundle) {
       if (isset($values[$bundle]) && $values[$bundle] === 1) {
         if (!in_array($bundle, array_keys($content_types))) {
@@ -131,17 +133,30 @@ class DeliveryConfigForm extends ConfigFormBase {
             'workflow_id' => $values["{$bundle}_workflow_id"],
             'signal_id' => $values["{$bundle}_signal_id"],
           ];
-          $config->set('content_types', $content_types);
+          $changed = TRUE;
+        }
+        else {
+          $existing_values = $content_types[$bundle];
+          foreach ($existing_values as $key => $existing_value) {
+            $form_val = $values["{$bundle}_{$key}"];
+            if ($form_val !== $existing_value) {
+              $content_types[$bundle][$key] = $form_val;
+              $changed = TRUE;
+            }
+          }
         }
       }
       elseif (isset($values[$bundle]) && $values[$bundle] === 0) {
         if (in_array($bundle, array_keys($content_types))) {
           unset($content_types[$bundle]);
-          $config->set('content_types', $content_types);
+          $changed = TRUE;
         }
       }
     }
-    $config->save();
+    if ($changed) {
+      $config->set('content_types', $content_types);
+      $config->save();
+    }
   }
 
 }
