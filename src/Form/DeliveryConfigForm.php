@@ -121,12 +121,14 @@ class DeliveryConfigForm extends ConfigFormBase {
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    // Update configuration.
     $bundles = array_keys($this->bundleInfo->getBundleInfo('node'));
     $values = $form_state->getValues();
     $config = $this->config(static::SETTINGS);
     $content_types = $config->get('content_types');
     $changed = FALSE;
     foreach ($bundles as $bundle) {
+      // Check if bundle is in existing config or values have changed.
       if (isset($values[$bundle]) && $values[$bundle] === 1) {
         if (!in_array($bundle, array_keys($content_types))) {
           $content_types[$bundle] = [
@@ -146,6 +148,7 @@ class DeliveryConfigForm extends ConfigFormBase {
           }
         }
       }
+      // Remove unselected bundles.
       elseif (isset($values[$bundle]) && $values[$bundle] === 0) {
         if (in_array($bundle, array_keys($content_types))) {
           unset($content_types[$bundle]);
@@ -153,10 +156,12 @@ class DeliveryConfigForm extends ConfigFormBase {
         }
       }
     }
+    // Update config if changes are present.
     if ($changed) {
       $config->set('content_types', $content_types);
       $config->save();
     }
+    parent::submitForm($form, $form_state);
   }
 
 }
