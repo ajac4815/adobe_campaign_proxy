@@ -114,11 +114,17 @@ class DeliveryConfigForm extends ConfigFormBase {
     $content_types = $config->get('content_types');
     foreach ($bundles as $bundle) {
       if (isset($values[$bundle]) && $values[$bundle] === 1) {
-        if (!in_array($bundle, $content_types)) {
+        if (!in_array($bundle, array_keys($content_types))) {
           $content_types[$bundle] = [
             'workflow_id' => $values["{$bundle}_workflow_id"],
             'signal_id' => $values["{$bundle}_signal_id"],
           ];
+          $config->set('content_types', $content_types);
+        }
+      }
+      elseif (isset($values[$bundle]) && $values[$bundle] === 0) {
+        if (in_array($bundle, array_keys($content_types))) {
+          unset($content_types[$bundle]);
           $config->set('content_types', $content_types);
         }
       }
