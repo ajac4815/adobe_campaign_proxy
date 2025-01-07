@@ -74,12 +74,22 @@ class DeliveryConfigForm extends ConfigFormBase {
     $options = [];
     foreach ($bundles as $key => $value) {
       $options[$key] = $value["label"];
+      $enabled = FALSE;
+      $workflow_id = FALSE;
+      $signal_id = FALSE;
+      // @todo Get default values.
+      if (in_array($key, array_keys($content_types))) {
+        $enabled = TRUE;
+        $workflow_id = $content_types[$key]['workflow_id'] ?: FALSE;
+        $signal_id = $content_types[$key]['signal_id'] ?: FALSE;
+      }
       $form[$key] = [
-        '#default_value' => in_array($key, array_keys($content_types)) ? 1 : 0,
+        '#default_value' => $enabled,
         '#type' => 'checkbox',
         '#title' => $value["label"],
       ];
       $form["{$key}_workflow_id"] = [
+        '#default_value' => $workflow_id,
         '#type' => 'textfield',
         '#title' => 'Workflow ID',
         '#description' => $this->t('The ID of the Adobe Campaign workflow that will be used for delivery.'),
@@ -90,6 +100,7 @@ class DeliveryConfigForm extends ConfigFormBase {
         ],
       ];
       $form["{$key}_signal_id"] = [
+        '#default_value' => $signal_id,
         '#type' => 'textfield',
         '#title' => 'External Signal ID',
         '#description' => $this->t('The ID of the Adobe Campaign workflow signal activity to trigger delivery.'),
@@ -112,6 +123,7 @@ class DeliveryConfigForm extends ConfigFormBase {
     $values = $form_state->getValues();
     $config = $this->config(static::SETTINGS);
     $content_types = $config->get('content_types');
+    // @todo Add updating existing bundle with new workflow values.
     foreach ($bundles as $bundle) {
       if (isset($values[$bundle]) && $values[$bundle] === 1) {
         if (!in_array($bundle, array_keys($content_types))) {
