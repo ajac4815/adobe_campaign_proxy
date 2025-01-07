@@ -7,7 +7,6 @@ use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -76,7 +75,7 @@ class DeliveryConfigForm extends ConfigFormBase {
     foreach ($bundles as $key => $value) {
       $options[$key] = $value["label"];
       $form[$key] = [
-        '#default_value' => in_array($key, $content_types) ? 1 : 0,
+        '#default_value' => in_array($key, array_keys($content_types)) ? 1 : 0,
         '#type' => 'checkbox',
         '#title' => $value["label"],
       ];
@@ -109,8 +108,22 @@ class DeliveryConfigForm extends ConfigFormBase {
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $bundles = $this->bundleInfo->getBundleInfo('node');
+    $bundles = array_keys($this->bundleInfo->getBundleInfo('node'));
     $values = $form_state->getValues();
+    $config = $this->config(static::SETTINGS);
+    $content_types = $config->get('content_types');
+    foreach ($bundles as $bundle) {
+      if (isset($values[$bundle]) && $values[$bundle] === 1) {
+        if (!in_array($bundle, $content_types)) {
+          $content_types[$bundle] = [
+            'workflow_id' => $values["{$bundle}_workflow_id"],
+            'signal_id' => $values["{$bundle}_signal_id"],
+          ];
+          $config->set('content_types', $content_types);
+        }
+      }
+    }
+    $config->save();
   }
 
 }
