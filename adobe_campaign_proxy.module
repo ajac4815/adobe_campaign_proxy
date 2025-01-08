@@ -5,6 +5,8 @@
  * Hooks to support campaign proxy.
  */
 
+use Drupal\node\NodeInterface;
+
 /**
  * Implements hook_theme().
  */
@@ -15,4 +17,28 @@ function adobe_campaign_proxy_theme() {
       'variables' => ['settings' => NULL, 'handler' => []],
     ],
   ];
+}
+
+/**
+ * Implements Implements hook_ENTITY_TYPE_update() for node entities.
+ */
+function adobe_campaign_proxy_node_update(NodeInterface $node) {
+  // Get enabled content types and check if node bundle is included.
+  $content_types = array_keys(\Drupal::config('adobe_campaign_proxy.settings')->get('content_types'));
+  if (in_array($node->bundle(), $content_types)) {
+    $state = $node->moderation_state ?? NULL;
+    if ($state && $state->value === 'published') {
+      // Check that node has only been published once.
+      $query = \Drupal::database()->select('content_moderation_state_field_revision', 'm')
+        ->fields('m', ['id']);
+      $query->condition('content_entity_type_id', 'node');
+      $query->condition('moderation_state', 'published');
+      $query->condition('content_entity_id', $node->id());
+      $result = $query->countQuery()->execute()->fetchField();
+      if ((int) $result === 0) {
+        // Add to queue to send.
+        \Drupal::queue('adobe_campaign_proxy_send')->createItem($node->id());
+      }
+    }
+  }
 }

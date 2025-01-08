@@ -77,11 +77,28 @@ class SendQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginI
       'link' => $node->toUrl('canonical', ['absolute' => TRUE])->toString(),
       'summary' => $node->body->summary ?? '',
     ];
-    // @todo pull workflow and signal values from config.
-    $result = $this->delivery->send('adam_workflow', 'signal1', $parameters);
-    // Leave item in queue to process again later.
-    if (!$result) {
-      throw new \Exception("Error during Adobe delivery for node {$node->id()}. Check logs for more information.");
+    // Get workflow and API signal IDs.
+    $content_types = \Drupal::config('adobe_campaign_proxy.settings')->get('content_types');
+    $bundle = $node->bundle();
+    if (in_array($bundle, array_keys($content_types))) {
+      $workflow_id = $content_types[$bundle]['workflow_id'] ?: FALSE;
+      $signal_id = $content_types[$bundle]['signal_id'] ?: FALSE;
+      if (!$workflow_id) {
+        throw new \Exception("Error during Adobe delivery for node {$node->id()}. Missing workflow ID, please update in configuration.");
+      }
+      elseif (!$signal_id) {
+        throw new \Exception("Error during Adobe delivery for node {$node->id()}. Missing signal ID, please update in configuration.");
+      }
+      $result = $this->delivery->send($workflow_id, $signal_id, $parameters);
+      // $result = $this->delivery->send('adam_workflow', 'signal1', $parameters);
+      // Leave item in queue to process again later.
+      if (!$result) {
+        throw new \Exception("Error during Adobe delivery for node {$node->id()}. Check logs for more information.");
+      }
+    }
+    else {
+      // @todo evaluate tossing out of queue.
+      throw new \Exception("Error during Adobe delivery for node {$node->id()}. Content type {$bundle} is not enabled to send.");
     }
   }
 
