@@ -1,0 +1,5 @@
+adobe_campaign_proxy.settings:
+  title: 'Adobe Campaign Proxy'
+  description: 'Configure the Adobe Campaign Proxy module.'
+  route_name: adobe_campaign_proxy.settings
+  parent: system.admin_config_content
