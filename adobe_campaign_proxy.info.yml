@@ -1,5 +1,5 @@
 name: Adobe Campaign Proxy
 description: Provides integration with the Adobe Campaign API to manage subscriptions.
-
+configure: adobe_campaign_proxy.settings
 type: module
 core_version_requirement: ^10 || ^11
