@@ -90,7 +90,6 @@ class SendQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginI
         throw new \Exception("Error during Adobe delivery for node {$node->id()}. Missing signal ID, please update in configuration.");
       }
       $result = $this->delivery->send($workflow_id, $signal_id, $parameters);
-      // $result = $this->delivery->send('adam_workflow', 'signal1', $parameters);
       // Leave item in queue to process again later.
       if (!$result) {
         throw new \Exception("Error during Adobe delivery for node {$node->id()}. Check logs for more information.");
