@@ -82,6 +82,89 @@ class Subscription {
     return FALSE;
   }
 
+  public function getSubscriptionData() {
+    // Filter by visibility.
+    // Ensures that backend only and/or test services are not included.
+    $endpoint = "profileAndServicesExt/service/byVisibility?_parameter=true";
+    $data = $this->proxy->get($endpoint);
+    if ($data && !empty($data->content)) {
+      return $data->content;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Get all active services.
+   *
+   * @return array|bool
+   *   An array of services or FALSE.
+   */
+  public function getSubscriptions() {
+    $serviceData = $this->getSubscriptionData();
+    if ($serviceData) {
+      $services = [];
+      foreach ($serviceData as $service) {
+        $name = $service->name;
+        $label = $service->label;
+        $id = $service->PKey;
+        $services[$name] = [
+          'label' => $label,
+          'id' => $id,
+        ];
+      }
+      return $services;
+    }
+    return FALSE;
+  }
+
+  public function getSubscriptionsByTopic() {
+    $endpoint = "profileAndServicesExt/cusTopic";
+    $data = $this->proxy->get($endpoint);
+    if ($data && !empty($data->content)) {
+      $topicsData = $data->content;
+      $topics = [];
+      foreach ($topicsData as $topic) {
+        $topics[$topic->title] = $topic->label;
+      }
+      if ($topics) {
+        $servicesData = $this->getSubscriptionData();
+        if ($servicesData) {
+          $servicesByTopic[] = [
+            'topics' => [],
+            'untagged' => [],
+          ];
+          foreach ($servicesData as $service) {
+            $name = $service->name;
+            $label = $service->label;
+            $id = $service->PKey;
+            $serviceArray = [
+              'label' => $label,
+              'id' => $id,
+              'name' => $name,
+            ];
+            if (!empty($service->cusTopiclink)) {
+              $topicId = $service->cusTopiclink->title;
+              if (isset($servicesByTopic['topics'][$topicId])) {
+                $servicesByTopic['topics'][$topicId]['services'][] = $serviceArray;
+              }
+              else {
+                $servicesByTopic['topics'][$topicId] = [
+                  'label' => $topics[$topicId],
+                  'services' => [$serviceArray],
+                ];
+              }
+            }
+            else {
+              $servicesByTopic['untagged'][] = $serviceArray;
+            }
+          }
+          return $servicesByTopic;
+        }
+      }
+    }
+    return FALSE;
+  }
+
   /**
    * Subscribe a profile to a service.
    *

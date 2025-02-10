@@ -11,6 +11,3 @@ services:
   adobe_campaign_proxy.subscription:
     class: Drupal\adobe_campaign_proxy\Subscription
     arguments: ["@adobe_campaign_proxy.proxy"]
-  adobe_campaign_proxy.subscription_manager:
-    class: Drupal\adobe_campaign_proxy\SubscriptionManager
-    arguments: ["@adobe_campaign_proxy.proxy"]
