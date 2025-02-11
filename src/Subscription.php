@@ -118,49 +118,42 @@ class Subscription {
   }
 
   public function getSubscriptionsByTopic() {
-    $endpoint = "profileAndServicesExt/cusTopic";
-    $data = $this->proxy->get($endpoint);
-    if ($data && !empty($data->content)) {
-      $topicsData = $data->content;
+    $servicesData = $this->getSubscriptionData();
+    if ($servicesData) {
+      $servicesByTopic[] = [
+        'topics' => [],
+        'untagged' => [],
+      ];
       $topics = [];
-      foreach ($topicsData as $topic) {
-        $topics[$topic->title] = $topic->label;
-      }
-      if ($topics) {
-        $servicesData = $this->getSubscriptionData();
-        if ($servicesData) {
-          $servicesByTopic[] = [
-            'topics' => [],
-            'untagged' => [],
-          ];
-          foreach ($servicesData as $service) {
-            $name = $service->name;
-            $label = $service->label;
-            $id = $service->PKey;
-            $serviceArray = [
-              'label' => $label,
-              'id' => $id,
-              'name' => $name,
-            ];
-            if (!empty($service->cusTopiclink)) {
-              $topicId = $service->cusTopiclink->title;
-              if (isset($servicesByTopic['topics'][$topicId])) {
-                $servicesByTopic['topics'][$topicId]['services'][] = $serviceArray;
-              }
-              else {
-                $servicesByTopic['topics'][$topicId] = [
-                  'label' => $topics[$topicId],
-                  'services' => [$serviceArray],
-                ];
-              }
-            }
-            else {
-              $servicesByTopic['untagged'][] = $serviceArray;
-            }
+      foreach ($servicesData as $service) {
+        $name = $service->name;
+        $label = $service->label;
+        $id = $service->PKey;
+        $serviceArray = [
+          'label' => $label,
+          'id' => $id,
+          'name' => $name,
+        ];
+        if (!empty($service->cusTopiclink)) {
+          $topic = $service->cusTopiclink->title;
+          $topicIndex = array_search($topic, $topics);
+          if (is_numeric($topicIndex)) {
+            $servicesByTopic['topics'][$topicIndex]['services'][] = $serviceArray;
           }
-          return $servicesByTopic;
+          else {
+            $topics[] = $topic;
+            $topicIndex = count($topics) - 1;
+            $servicesByTopic['topics'][$topicIndex] = [
+              'label' => $topic,
+              'services' => [$serviceArray],
+            ];
+          }
+        }
+        else {
+          $servicesByTopic['untagged'][] = $serviceArray;
         }
       }
+      return $servicesByTopic;
     }
     return FALSE;
   }
