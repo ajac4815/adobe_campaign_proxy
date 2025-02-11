@@ -49,6 +49,11 @@ class SubscriptionManagement extends FormBase {
    *
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $form['email'] = [
+      '#required' => TRUE,
+      '#title' => $this->t('Email'),
+      '#type' => 'email',
+    ];
     // $services = $this->subscriptionManager->getSubscriptions();
     $servicesByTopic = $this->subscriptionManager->getSubscriptionsByTopic();
     if ($servicesByTopic && $servicesByTopic['topics']) {
@@ -58,14 +63,10 @@ class SubscriptionManagement extends FormBase {
           '#markup' => "<h3>{$value['label']}</h3>",
         ];
         foreach ($value['services'] as $service) {
-          $key = $service['id'];
-          $label = $service['label'];
-          $form[$key] = [
-            '#type' => 'checkbox',
-            '#title' => $label,
-          ];
+          $this->createServiceInput($form, $service);
         }
       }
+
       $form['actions'] = ['#type' => 'actions'];
       $form['actions']['submit'] = [
         '#type' => 'submit',
@@ -74,6 +75,15 @@ class SubscriptionManagement extends FormBase {
       ];
     }
     return $form;
+  }
+
+  private function createServiceInput(&$form, $service) {
+    $key = $service['id'];
+    $label = $service['label'];
+    $form[$key] = [
+      '#type' => 'checkbox',
+      '#title' => $label,
+    ];
   }
 
   /**
